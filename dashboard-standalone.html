@@ -699,6 +699,26 @@
   <div class="detail-body" id="detailBody"></div>
 </div>
 
+<!-- 撒花 Canvas -->
+<canvas id="confettiCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9998;display:none;"></canvas>
+
+<!-- 庆祝弹窗 -->
+<div id="celebrate" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999;background:rgba(0,0,0,0.3);">
+  <div id="celebrateBox" style="background:linear-gradient(135deg,#fff8e8,#fde4d8);border-radius:24px;padding:36px 32px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2);border:2px solid rgba(245,165,165,0.3);max-width:300px;animation:celebratePop 0.4s ease;">
+    <div id="celebrateEmoji" style="font-size:56px;margin-bottom:8px;">🎉</div>
+    <div id="celebrateTitle" style="font-size:22px;font-weight:900;color:#5a4a3a;margin-bottom:6px;">太棒了！</div>
+    <div id="celebrateSub" style="font-size:13px;color:#a89880;margin-bottom:16px;">又完成了一项任务！</div>
+    <button onclick="closeCelebrate()" style="background:linear-gradient(135deg,#f5a5a5,#f5c178);color:#fff;border:none;border-radius:12px;padding:10px 28px;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(245,165,165,0.3);">继续加油 💪</button>
+  </div>
+</div>
+<style>
+  @keyframes celebratePop {
+    0% { transform: scale(0.5); opacity: 0; }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+</style>
+
 <!-- 弹窗 Modal -->
 <div class="modal-mask" id="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
@@ -717,6 +737,112 @@ const STORE = {
 
 const today = () => new Date().toISOString().split('T')[0];
 const dateKey = (d) => d.toISOString().split('T')[0];
+
+// ============ 撒花庆祝动画 ============
+const celebrateMessages = [
+  {emoji:'🎉', title:'太棒了！', sub:'又完成了一项任务！'},
+  {emoji:'🌟', title:'了不起！', sub:'离目标又近了一步！'},
+  {emoji:'💪', title:'加油！', sub:'坚持就是胜利！'},
+  {emoji:'🐰', title:'兔子为你点赞！', sub:'你真的很棒哦~'},
+  {emoji:'✨', title:'闪亮亮！', sub:'今天的你又进步了！'},
+  {emoji:'🥳', title:'开心！', sub:'又一个小目标达成！'},
+  {emoji:'👏', title:'棒棒哒！', sub:'继续保持这个节奏！'},
+  {emoji:'🏆', title:'冠军！', sub:'你就是今天的MVP！'}
+];
+
+let confettiAnimating = false;
+let confettiParticles = [];
+
+function celebrate() {
+  // 随机选一条庆祝语
+  const msg = celebrateMessages[Math.floor(Math.random() * celebrateMessages.length)];
+  document.getElementById('celebrateEmoji').textContent = msg.emoji;
+  document.getElementById('celebrateTitle').textContent = msg.title;
+  document.getElementById('celebrateSub').textContent = msg.sub;
+
+  // 显示弹窗
+  const el = document.getElementById('celebrate');
+  el.style.display = 'flex';
+
+  // 撒花动画
+  startConfetti();
+
+  // 2秒后自动关闭弹窗（撒花继续）
+  setTimeout(() => {
+    if (el.style.display === 'flex') closeCelebrate();
+  }, 2500);
+}
+
+function closeCelebrate() {
+  document.getElementById('celebrate').style.display = 'none';
+}
+
+function startConfetti() {
+  const canvas = document.getElementById('confettiCanvas');
+  canvas.style.display = 'block';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+
+  // 生成彩色粒子（暖色调，和工作台风格一致）
+  const colors = ['#f5a5a5','#f5c178','#a890d4','#8bc97a','#7ab8d4','#e88aa8','#f5e0a8','#ffb3ba'];
+  confettiParticles = [];
+  for (let i = 0; i < 80; i++) {
+    confettiParticles.push({
+      x: window.innerWidth / 2 + (Math.random() - 0.5) * 200,
+      y: window.innerHeight / 2,
+      vx: (Math.random() - 0.5) * 12,
+      vy: Math.random() * -15 - 5,
+      gravity: 0.4,
+      size: Math.random() * 8 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+      rotationSpeed: (Math.random() - 0.5) * 15,
+      shape: Math.random() > 0.5 ? 'rect' : 'circle',
+      life: 1
+    });
+  }
+
+  if (confettiAnimating) return;
+  confettiAnimating = true;
+  animateConfetti(ctx, canvas);
+}
+
+function animateConfetti(ctx, canvas) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  let alive = false;
+
+  confettiParticles.forEach(p => {
+    if (p.life <= 0) return;
+    alive = true;
+    p.vy += p.gravity;
+    p.x += p.vx;
+    p.y += p.vy;
+    p.rotation += p.rotationSpeed;
+    p.life -= 0.008;
+
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rotation * Math.PI / 180);
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = p.color;
+    if (p.shape === 'rect') {
+      ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size * 0.6);
+    } else {
+      ctx.beginPath();
+      ctx.arc(0, 0, p.size/2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  });
+
+  if (alive) {
+    requestAnimationFrame(() => animateConfetti(ctx, canvas));
+  } else {
+    confettiAnimating = false;
+    canvas.style.display = 'none';
+  }
+}
 
 // ============ 问候 + 日期 + 状态栏 ============
 function updateGreeting() {
@@ -1515,8 +1641,10 @@ function delSport(i) {
 
 function toggleSport(i) {
   let items = STORE.get('sportItems', []);
+  const wasDone = items[i].done;
   items[i].done = !items[i].done; STORE.set('sportItems', items);
   openDetail('sport');
+  if (!wasDone && items[i].done) celebrate();
 }
 
 function setStreakMode(m) { STORE.set('streakMode', m); openDetail('sport'); }
@@ -1643,8 +1771,10 @@ function saveTodo() {
 
 function toggleTodo(i) {
   let todos = STORE.get('todos_'+today(), []);
+  const wasDone = todos[i].done;
   todos[i].done = !todos[i].done; STORE.set('todos_'+today(), todos);
   openDetail('plan'); updateOverview();
+  if (!wasDone && todos[i].done) celebrate();
 }
 
 function delTodo(i) {
@@ -1752,9 +1882,11 @@ function delRead(i) {
 
 function toggleRead(i) {
   let content = STORE.get('readContent', []);
+  const wasDone = content[i].done;
   content[i].done = !content[i].done;
   STORE.set('readContent', content);
   openDetail('read'); updateOverview();
+  if (!wasDone && content[i].done) celebrate();
 }
 
 function quickAdd(type) {
