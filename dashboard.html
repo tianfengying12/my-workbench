@@ -456,10 +456,13 @@
 <div class="bg-rabbit">🐰</div>
 
 <div class="app">
-  <!-- 状态栏占位 -->
+  <!-- 状态栏 -->
   <div class="status-bar">
-    <span id="statusTime">22:44</span>
-    <span>📶 🔋</span>
+    <span id="statusTime">08:39</span>
+    <span id="statusIcons">
+      <span id="signalIcon">📶</span>
+      <span id="batteryIcon">🔋</span>
+    </span>
   </div>
 
   <!-- 顶部 Header -->
@@ -498,52 +501,52 @@
         <div class="ring">
           <svg viewBox="0 0 64 64">
             <circle class="ring-bg" cx="32" cy="32" r="26"/>
-            <circle class="ring-fg" cx="32" cy="32" r="26"
+            <circle class="ring-fg" id="ring-sport" cx="32" cy="32" r="26"
               stroke="#8bc97a"
-              stroke-dasharray="163.36" stroke-dashoffset="40.84"/>
+              stroke-dasharray="163.36" stroke-dashoffset="163.36"/>
           </svg>
           <div class="ring-center">🏃</div>
         </div>
-        <div class="ring-value">75%</div>
+        <div class="ring-value" id="val-sport">0%</div>
         <div class="ring-label">运动</div>
       </div>
       <div class="overview-item" onclick="openDetail('sleep')">
         <div class="ring">
           <svg viewBox="0 0 64 64">
             <circle class="ring-bg" cx="32" cy="32" r="26"/>
-            <circle class="ring-fg" cx="32" cy="32" r="26"
+            <circle class="ring-fg" id="ring-sleep" cx="32" cy="32" r="26"
               stroke="#a890d4"
-              stroke-dasharray="163.36" stroke-dashoffset="29.4"/>
+              stroke-dasharray="163.36" stroke-dashoffset="163.36"/>
           </svg>
           <div class="ring-center">😴</div>
         </div>
-        <div class="ring-value">82%</div>
+        <div class="ring-value" id="val-sleep">0%</div>
         <div class="ring-label">睡眠</div>
       </div>
       <div class="overview-item" onclick="openDetail('read')">
         <div class="ring">
           <svg viewBox="0 0 64 64">
             <circle class="ring-bg" cx="32" cy="32" r="26"/>
-            <circle class="ring-fg" cx="32" cy="32" r="26"
+            <circle class="ring-fg" id="ring-read" cx="32" cy="32" r="26"
               stroke="#f5a5a5"
-              stroke-dasharray="163.36" stroke-dashoffset="65.34"/>
+              stroke-dasharray="163.36" stroke-dashoffset="163.36"/>
           </svg>
           <div class="ring-center">📚</div>
         </div>
-        <div class="ring-value">60%</div>
+        <div class="ring-value" id="val-read">0%</div>
         <div class="ring-label">启蒙</div>
       </div>
       <div class="overview-item" onclick="openDetail('plan')">
         <div class="ring">
           <svg viewBox="0 0 64 64">
             <circle class="ring-bg" cx="32" cy="32" r="26"/>
-            <circle class="ring-fg" cx="32" cy="32" r="26"
+            <circle class="ring-fg" id="ring-plan" cx="32" cy="32" r="26"
               stroke="#f5c178"
-              stroke-dasharray="163.36" stroke-dashoffset="35.94"/>
+              stroke-dasharray="163.36" stroke-dashoffset="163.36"/>
           </svg>
           <div class="ring-center">✅</div>
         </div>
-        <div class="ring-value">78%</div>
+        <div class="ring-value" id="val-plan">0%</div>
         <div class="ring-label">习惯</div>
       </div>
     </div>
@@ -709,17 +712,73 @@ const STORE = {
 const today = () => new Date().toISOString().split('T')[0];
 const dateKey = (d) => d.toISOString().split('T')[0];
 
-// ============ 问候 + 日期 ============
+// ============ 问候 + 日期 + 状态栏 ============
 function updateGreeting() {
-  const h = new Date().getHours();
+  const d = new Date();
+  const h = d.getHours();
   const g = h < 6 ? '凌晨好呀 🌌' : h < 12 ? '早上好呀 ☀️' : h < 14 ? '中午好呀 🌞' : h < 18 ? '下午好呀 🌤️' : h < 22 ? '晚上好呀 🌙' : '夜深了 🌜';
   document.getElementById('greeting').textContent = g;
-  const d = new Date();
   const days = ['周日','周一','周二','周三','周四','周五','周六'];
   const m = String(d.getMonth()+1).padStart(2,'0');
   const dd = String(d.getDate()).padStart(2,'0');
   document.getElementById('datePill').textContent = `${m}/${dd} ${days[d.getDay()]}`;
-  document.getElementById('statusTime').textContent = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+// 状态栏：实时时间 + 信号 + 电池
+function updateStatusBar() {
+  const d = new Date();
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  document.getElementById('statusTime').textContent = `${hh}:${mm}`;
+}
+
+// 电池 API
+function initBattery() {
+  const batteryEl = document.getElementById('batteryIcon');
+  if ('getBattery' in navigator) {
+    navigator.getBattery().then(battery => {
+      function update() {
+        const pct = Math.round(battery.level * 100);
+        let icon = '🔋';
+        if (battery.charging) icon = '⚡';
+        else if (pct <= 20) icon = '🪫';
+        batteryEl.textContent = `${icon} ${pct}%`;
+      }
+      update();
+      battery.addEventListener('levelchange', update);
+      battery.addEventListener('chargingchange', update);
+    }).catch(() => {
+      batteryEl.textContent = '🔋';
+    });
+  } else {
+    batteryEl.textContent = '🔋';
+  }
+}
+
+// 信号 API
+function initSignal() {
+  const signalEl = document.getElementById('signalIcon');
+  if (navigator.connection) {
+    function update() {
+      const conn = navigator.connection;
+      let bars = 2;
+      if (conn.effectiveType) {
+        if (conn.effectiveType.includes('4g')) bars = 4;
+        else if (conn.effectiveType.includes('3g')) bars = 3;
+        else if (conn.effectiveType.includes('2g')) bars = 2;
+        else bars = 4;
+      }
+      // 用信号格表示
+      const icons = ['📴','📶','📶','📶','📶'];
+      const labels = ['无信号','弱','中','较强','强'];
+      signalEl.textContent = icons[bars];
+      signalEl.title = labels[bars] + (conn.effectiveType ? ` (${conn.effectiveType})` : '');
+    }
+    update();
+    navigator.connection.addEventListener('change', update);
+  } else {
+    signalEl.textContent = '📶';
+  }
 }
 
 // ============ 睡眠趋势图 ============
@@ -784,15 +843,46 @@ function drawTrend() {
   document.getElementById('avgSleep').textContent = avg;
 }
 
-// ============ 进度统计 ============
+// ============ 进度统计（动态计算） ============
+const RING_CIRCUMFERENCE = 163.36; // 2 * PI * 26
+
+function setRing(id, pct) {
+  pct = Math.max(0, Math.min(100, pct));
+  const offset = RING_CIRCUMFERENCE * (1 - pct / 100);
+  const ring = document.getElementById('ring-' + id);
+  const val = document.getElementById('val-' + id);
+  if (ring) ring.setAttribute('stroke-dashoffset', offset.toFixed(2));
+  if (val) val.textContent = Math.round(pct) + '%';
+}
+
 function updateOverview() {
+  // === 运动进度：已完成运动项 / 总运动项 ===
+  const sportItems = STORE.get('sportItems', []);
+  const sportDone = sportItems.filter(s => s.done).length;
+  const sportPct = sportItems.length ? (sportDone / sportItems.length * 100) : 0;
+  setRing('sport', sportPct);
+
+  // === 睡眠进度：今日睡眠时长 / 8小时目标 ===
+  const sleepRecords = STORE.get('sleepRecords', []);
+  const todayRec = sleepRecords.find(r => r.date === today());
+  const sleepPct = todayRec ? Math.min(100, (todayRec.hours / 8) * 100) : 0;
+  setRing('sleep', sleepPct);
+
+  // === 启蒙进度：今日启蒙内容数 / 每日3项目标 ===
+  const readContent = STORE.get('readContent', []);
+  const todayRead = readContent.filter(r => r.date === today());
+  const readPct = Math.min(100, (todayRead.length / 3) * 100);
+  setRing('read', readPct);
+
+  // === 计划/习惯进度：已完成计划 / 总计划 ===
   const todos = STORE.get('todos_'+today(), []);
   const doneCount = todos.filter(t => t.done).length;
   const totalCount = todos.length;
-  const pct = totalCount ? Math.round(doneCount/totalCount*100) : 0;
-  document.querySelectorAll('.ring-value')[3].textContent = pct + '%';
+  const planPct = totalCount ? (doneCount / totalCount * 100) : 0;
+  setRing('plan', planPct);
+
   // 主任务进度
-  document.getElementById('mainProgress').style.width = pct + '%';
+  document.getElementById('mainProgress').style.width = planPct + '%';
   document.getElementById('mainProgressText').textContent = `${doneCount}/${totalCount} 项完成`;
   document.getElementById('mainTaskDesc').textContent = totalCount ? `今日共 ${totalCount} 项待办` : '今天还没有计划，去添加吧';
 }
@@ -1449,9 +1539,14 @@ function goHome() { closeDetail(); }
 
 // ============ 初始化 ============
 updateGreeting();
+updateStatusBar();
+initBattery();
+initSignal();
 drawTrend();
 updateOverview();
 setInterval(updateGreeting, 60000);
+setInterval(updateStatusBar, 1000); // 时间每秒更新
+setInterval(updateOverview, 5000);  // 概览每5秒刷新
 </script>
 </body>
 </html>
