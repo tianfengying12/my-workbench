@@ -564,6 +564,12 @@
     <span class="main-task-deco">🐰</span>
   </div>
 
+  <!-- 今日要闻 -->
+  <div class="section-card" id="homeNews">
+    <div class="section-title">📰 今日要闻</div>
+    <div class="list" id="homeNewsList"></div>
+  </div>
+
   <!-- 支持任务 -->
   <div class="subtask-header">
     <span class="subtask-title">❤️ 今日支持任务</span>
@@ -1013,7 +1019,19 @@ function renderSport(body) {
 function renderRead(body) {
   const content = STORE.get('readContent', []);
   const categories = ['绘本阅读','英语启蒙','数字游戏','手工创意','音乐启蒙','自然探索','亲子对话'];
+  const todayCount = content.filter(c => c.date === today()).length;
+  const doneCount = content.filter(c => c.date === today() && c.done).length;
   body.innerHTML = `
+    <div class="section-card">
+      <div class="section-title">📚 今日启蒙</div>
+      <div style="text-align:center;padding:14px 0;">
+        <div style="font-size:32px;font-weight:900;color:#f5a5a5;">${doneCount}/${todayCount}</div>
+        <div style="font-size:12px;color:#a89880;margin-top:4px;">已完成 / 今日总数</div>
+        <div class="progress-bar-wrap" style="margin-top:12px;">
+          <div class="progress-bar" style="width:${todayCount?doneCount/todayCount*100:0}%;background:linear-gradient(90deg,#f5a5a5,#f8c4c4);"></div>
+        </div>
+      </div>
+    </div>
     <div class="section-card">
       <div class="section-title">📚 分类</div>
       <div class="shortcuts-grid">
@@ -1028,12 +1046,13 @@ function renderRead(body) {
         </div>
       </div>
     </div>
-    <div class="section-title">📋 内容列表</div>
+    <div class="section-title">📋 内容列表（可勾选）</div>
     <div class="list">${content.map((c, i) => `
       <div class="list-item">
+        <div class="check-box ${c.done?'checked':''}" onclick="toggleRead(${i})"></div>
         <div class="list-item-text">
-          <div class="list-item-title">${c.title}</div>
-          <div class="list-item-sub">${c.category} · ${c.date||''}</div>
+          <div class="list-item-title ${c.done?'done':''}">${c.title}</div>
+          <div class="list-item-sub">${c.category} · ${c.date||''}${c.done?' · ✅ 已完成':''}</div>
         </div>
         <span class="list-item-del" onclick="delRead(${i})">删除</span>
       </div>`).join('') || '<div class="empty"><div class="empty-emoji">📚</div>还没有启蒙内容</div>'}
@@ -1496,9 +1515,9 @@ function saveRead() {
   const title = document.getElementById('readTitle').value.trim();
   if (!title) { alert('请填写内容名称'); return; }
   let content = STORE.get('readContent', []);
-  content.push({ category, title, date: today() });
+  content.push({ category, title, date: today(), done: false });
   STORE.set('readContent', content);
-  closeModal(); openDetail('read');
+  closeModal(); openDetail('read'); updateOverview();
 }
 
 function addReadCustom() {
@@ -1520,7 +1539,14 @@ function filterRead(cat) {
 function delRead(i) {
   let content = STORE.get('readContent', []);
   content.splice(i, 1); STORE.set('readContent', content);
-  openDetail('read');
+  openDetail('read'); updateOverview();
+}
+
+function toggleRead(i) {
+  let content = STORE.get('readContent', []);
+  content[i].done = !content[i].done;
+  STORE.set('readContent', content);
+  openDetail('read'); updateOverview();
 }
 
 function quickAdd(type) {
@@ -1538,12 +1564,31 @@ function closeModal() { document.getElementById('modal').classList.remove('show'
 function goHome() { closeDetail(); }
 
 // ============ 初始化 ============
+function renderHomeNews() {
+  const news = [
+    {title:'AI 编程助手迎来新一轮升级', src:'https://www.thepaper.cn'},
+    {title:'夏日健康饮食：八种最适合的时令水果', src:'https://www.xinhuanet.com'},
+    {title:'亲子阅读：让孩子爱上阅读的五个小技巧', src:'https://www.sohu.com'}
+  ];
+  const el = document.getElementById('homeNewsList');
+  if (!el) return;
+  el.innerHTML = news.map(n => `
+    <div class="list-item" onclick="window.open('${n.src}','_blank')">
+      <div style="font-size:22px;">📰</div>
+      <div class="list-item-text">
+        <div class="list-item-title">${n.title}</div>
+        <div class="list-item-sub">点击查看详情 ›</div>
+      </div>
+    </div>`).join('');
+}
+
 updateGreeting();
 updateStatusBar();
 initBattery();
 initSignal();
 drawTrend();
 updateOverview();
+renderHomeNews();
 setInterval(updateGreeting, 60000);
 setInterval(updateStatusBar, 1000); // 时间每秒更新
 setInterval(updateOverview, 5000);  // 概览每5秒刷新
