@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="我的工作台">
+<meta name="theme-color" content="#f5ede0">
+<meta name="description" content="我的个人工作台">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+<title>我的工作台</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { width: 100%; min-height: 100%; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  body {
+    background:
+      linear-gradient(180deg, #fdf6ec 0%, #f5ede0 100%);
+    color: #5a4a3a;
+    overflow-x: hidden;
+  }
+
+  /* 背景兔子插画 */
+  .bg-rabbit {
+    position: fixed; top: 60px; right: -20px; font-size: 160px;
+    opacity: 0.08; transform: rotate(-5deg); pointer-events: none; z-index: 0;
+  }
+
+  .app {
+    max-width: 480px; margin: 0 auto;
+    padding: 0 16px 100px;
+    position: relative; z-index: 1;
+  }
+
+  /* 状态栏占位 */
+  .status-bar {
+    height: 32px; display: flex; justify-content: space-between;
+    align-items: center; padding: 4px 8px;
+    font-size: 13px; font-weight: 700; color: #5a4a3a;
+  }
+
+  /* 顶部 Header */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 4px 8px;
+  }
+  .header-left { display: flex; align-items: center; gap: 8px; flex: 1; }
+  .menu-btn { font-size: 18px; color: #7a6a5a; padding: 4px 6px; }
+  .title { font-size: 17px; font-weight: 800; color: #5a4a3a; }
+  .title .sparkle { color: #f5a5a5; }
+  .date-pill {
+    background: rgba(255,255,255,0.65);
+    padding: 4px 12px; border-radius: 14px;
+    font-size: 11px; font-weight: 700; color: #7a6a5a;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+
+  /* 问候区 */
+  .greeting-section {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 4px 4px 14px; gap: 12px;
+  }
+  .greeting-text { flex: 1; }
+  .greeting-main {
+    font-size: 26px; font-weight: 900; color: #5a4a3a; line-height: 1.2;
+  }
+  .greeting-sub {
+    font-size: 12px; color: #a89880; margin-top: 4px;
+  }
+  .weather-box {
+    display: flex; align-items: center; gap: 4px;
+    background: rgba(255,255,255,0.7);
+    padding: 6px 12px; border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .weather-emoji { font-size: 18px; }
+  .weather-temp { font-size: 16px; font-weight: 800; color: #5a4a3a; }
+
+  /* 今日一句 */
+  .quote-card {
+    background: linear-gradient(135deg, #fff8e8 0%, #fef0d8 100%);
+    border-radius: 18px; padding: 16px 18px;
+    margin-bottom: 14px; position: relative;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.04);
+    border: 1px solid rgba(245, 165, 165, 0.15);
+  }
+  .quote-tag {
+    display: inline-block;
+    background: rgba(245,165,165,0.15); color: #d97a7a;
+    font-size: 10px; font-weight: 700;
+    padding: 3px 8px; border-radius: 8px; margin-bottom: 8px;
+  }
+  .quote-text {
+    font-size: 14px; color: #5a4a3a; line-height: 1.6;
+    font-weight: 600;
+  }
+  .quote-deco {
+    position: absolute; right: 10px; bottom: 8px; font-size: 28px;
+    opacity: 0.4;
+  }
+
+  /* 今日概览（环形进度） */
+  .section-card {
+    background: rgba(255,255,255,0.6);
+    border-radius: 18px; padding: 14px 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.04);
+    border: 1px solid rgba(200,180,140,0.12);
+  }
+  .section-title {
+    font-size: 13px; font-weight: 800; color: #5a4a3a;
+    margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+  }
+  .overview-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .overview-item {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    cursor: pointer;
+  }
+  .ring {
+    width: 64px; height: 64px; position: relative;
+  }
+  .ring svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+  .ring-bg { stroke: rgba(200,180,140,0.2); fill: none; stroke-width: 5; }
+  .ring-fg { fill: none; stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 0.6s; }
+  .ring-center {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .ring-label {
+    font-size: 10px; color: #7a6a5a; font-weight: 700; text-align: center;
+  }
+  .ring-value {
+    font-size: 11px; font-weight: 800; color: #5a4a3a; margin-top: -2px;
+  }
+
+  /* 今日主任务 */
+  .main-task-card {
+    background: linear-gradient(135deg, #fff5ed 0%, #fde4d8 100%);
+    border-radius: 18px; padding: 16px 18px;
+    margin-bottom: 14px; position: relative;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.04);
+    border: 1px solid rgba(245,165,165,0.2);
+  }
+  .main-task-tag {
+    display: inline-block;
+    background: rgba(245,165,165,0.2); color: #d97a7a;
+    font-size: 10px; font-weight: 700;
+    padding: 3px 8px; border-radius: 8px; margin-bottom: 8px;
+  }
+  .main-task-title {
+    font-size: 16px; font-weight: 800; color: #5a4a3a;
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 4px;
+  }
+  .main-task-desc {
+    font-size: 11px; color: #a89880; margin-bottom: 12px;
+  }
+  .progress-bar-wrap {
+    height: 8px; background: rgba(255,255,255,0.7);
+    border-radius: 4px; overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .progress-bar {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, #f5a5a5, #f5c178);
+    transition: width 0.6s;
+  }
+  .progress-text {
+    font-size: 11px; color: #7a6a5a; font-weight: 700;
+    text-align: right;
+  }
+  .main-task-deco {
+    position: absolute; right: 12px; top: 14px; font-size: 36px; opacity: 0.85;
+  }
+
+  /* 支持任务 */
+  .subtask-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 4px 10px;
+  }
+  .subtask-title { font-size: 13px; font-weight: 800; color: #5a4a3a; }
+  .view-all { font-size: 11px; color: #a89880; font-weight: 600; }
+  .subtask-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 10px; margin-bottom: 14px;
+  }
+  .subtask-card {
+    background: rgba(255,255,255,0.6);
+    border-radius: 14px; padding: 12px 8px;
+    text-align: center; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border: 1px solid rgba(200,180,140,0.12);
+    transition: transform 0.2s;
+  }
+  .subtask-card:active { transform: scale(0.96); }
+  .subtask-emoji {
+    font-size: 26px; margin-bottom: 4px;
+  }
+  .subtask-label {
+    font-size: 11px; font-weight: 700; color: #5a4a3a; margin-bottom: 2px;
+  }
+  .subtask-sub {
+    font-size: 9px; color: #a89880;
+  }
+
+  /* 底部两栏：趋势 + 快速记录 */
+  .bottom-grid {
+    display: grid; grid-template-columns: 1.3fr 1fr; gap: 12px;
+    margin-bottom: 14px;
+  }
+  .trend-card, .quick-card {
+    background: rgba(255,255,255,0.6);
+    border-radius: 16px; padding: 14px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.04);
+    border: 1px solid rgba(200,180,140,0.12);
+  }
+  .trend-header, .quick-header {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 800; color: #5a4a3a; margin-bottom: 10px;
+  }
+  .trend-avg {
+    margin-left: auto; font-size: 10px; color: #a89880; font-weight: 600;
+  }
+  .trend-avg strong { color: #7ab8d4; font-size: 12px; }
+  #trendChart { width: 100%; height: 90px; display: block; }
+  .trend-labels {
+    display: flex; justify-content: space-between;
+    font-size: 9px; color: #a89880; margin-top: 4px;
+  }
+
+  .quick-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .quick-btn {
+    background: rgba(255,255,255,0.8);
+    border-radius: 12px; padding: 10px 6px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    cursor: pointer; border: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  }
+  .quick-btn:active { transform: scale(0.94); }
+  .quick-btn-emoji { font-size: 20px; }
+  .quick-btn-label { font-size: 10px; color: #5a4a3a; font-weight: 700; }
+
+  /* 模块快捷入口卡片（藏在底部 tabbar 上面） */
+  .shortcuts-card {
+    background: rgba(255,255,255,0.6);
+    border-radius: 16px; padding: 14px;
+    margin-bottom: 14px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.04);
+    border: 1px solid rgba(200,180,140,0.12);
+  }
+  .shortcuts-title {
+    font-size: 13px; font-weight: 800; color: #5a4a3a; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .shortcuts-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .shortcut {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    cursor: pointer;
+  }
+  .shortcut-icon {
+    width: 44px; height: 44px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: #fff;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+  }
+  .shortcut-label {
+    font-size: 10px; color: #7a6a5a; font-weight: 600;
+  }
+
+  /* 底部 Tabbar */
+  .tabbar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(255,250,240,0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(200,180,140,0.2);
+    display: flex; align-items: center; justify-content: space-around;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    z-index: 100;
+    max-width: 480px; margin: 0 auto;
+  }
+  .tab {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; gap: 2px;
+    padding: 6px 0; cursor: pointer;
+    color: #a89880; font-size: 10px; font-weight: 700;
+  }
+  .tab-icon { font-size: 22px; }
+  .tab.active { color: #f5a5a5; }
+  .tab-plus {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: linear-gradient(135deg, #f5a5a5 0%, #f5c178 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; color: #fff;
+    box-shadow: 0 6px 16px rgba(245,165,165,0.4);
+    margin-top: -22px;
+  }
+
+  /* Modal 弹层 */
+  .modal-mask {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: none; align-items: flex-end; justify-content: center;
+    z-index: 200;
+  }
+  .modal-mask.show { display: flex; }
+  .modal {
+    width: 100%; max-width: 480px;
+    background: #f5ede0;
+    border-radius: 20px 20px 0 0;
+    padding: 16px 18px calc(16px + env(safe-area-inset-bottom));
+    max-height: 80vh; overflow-y: auto;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .modal-handle {
+    width: 36px; height: 4px; background: rgba(0,0,0,0.15);
+    border-radius: 2px; margin: 0 auto 12px;
+  }
+  .modal-title {
+    font-size: 16px; font-weight: 800; color: #5a4a3a;
+    margin-bottom: 14px; text-align: center;
+  }
+  .form-group { margin-bottom: 12px; }
+  .form-label {
+    font-size: 12px; font-weight: 700; color: #7a6a5a; margin-bottom: 4px; display: block;
+  }
+  .form-input, .form-textarea {
+    width: 100%; padding: 10px 12px;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid rgba(200,180,140,0.2);
+    border-radius: 10px; font-size: 14px;
+    color: #5a4a3a; outline: none;
+    font-family: inherit;
+  }
+  .form-input:focus, .form-textarea:focus { border-color: #f5a5a5; }
+  .form-textarea { min-height: 80px; resize: none; }
+  .btn-row { display: flex; gap: 10px; margin-top: 14px; }
+  .btn {
+    flex: 1; padding: 12px;
+    border-radius: 12px; border: none;
+    font-size: 14px; font-weight: 800;
+    cursor: pointer; font-family: inherit;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #f5a5a5, #f5c178);
+    color: #fff; box-shadow: 0 4px 12px rgba(245,165,165,0.3);
+  }
+  .btn-secondary {
+    background: rgba(255,255,255,0.8);
+    color: #7a6a5a;
+  }
+
+  /* 列表项 */
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .list-item {
+    background: rgba(255,255,255,0.6);
+    border-radius: 12px; padding: 12px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  }
+  .check-box {
+    width: 22px; height: 22px; border-radius: 7px;
+    border: 2px solid #d4b8e8;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+    background: #fff;
+  }
+  .check-box.checked {
+    background: linear-gradient(135deg, #a890d4, #d4b8e8);
+    border-color: #a890d4;
+  }
+  .check-box.checked::after {
+    content: '✓'; color: #fff; font-size: 13px; font-weight: 800;
+  }
+  .list-item-text { flex: 1; }
+  .list-item-title { font-size: 13px; font-weight: 700; color: #5a4a3a; }
+  .list-item-title.done { text-decoration: line-through; color: #a89880; }
+  .list-item-sub { font-size: 10px; color: #a89880; margin-top: 2px; }
+  .list-item-del {
+    color: #d97a7a; font-size: 11px; cursor: pointer; padding: 4px;
+  }
+
+  /* 详情页 */
+  .detail {
+    display: none;
+    position: fixed; inset: 0;
+    background: #f5ede0;
+    z-index: 150; overflow-y: auto;
+  }
+  .detail.show { display: block; }
+  .detail-header {
+    position: sticky; top: 0;
+    background: rgba(245,237,224,0.95);
+    backdrop-filter: blur(20px);
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(200,180,140,0.2);
+    z-index: 10;
+  }
+  .back-btn {
+    width: 32px; height: 32px; border-radius: 10px;
+    background: rgba(255,255,255,0.8);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; cursor: pointer;
+  }
+  .detail-title { font-size: 15px; font-weight: 800; color: #5a4a3a; }
+  .detail-body { padding: 16px; padding-bottom: 100px; }
+  .add-btn {
+    width: 100%; padding: 12px;
+    background: linear-gradient(135deg, #f5a5a5, #f5c178);
+    color: #fff; border: none; border-radius: 12px;
+    font-size: 14px; font-weight: 800; cursor: pointer;
+    margin-top: 12px; box-shadow: 0 4px 12px rgba(245,165,165,0.3);
+  }
+  .empty {
+    text-align: center; padding: 40px 20px; color: #a89880; font-size: 13px;
+  }
+  .empty-emoji { font-size: 40px; margin-bottom: 8px; opacity: 0.5; }
+  .streak-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(255,255,255,0.6); border-radius: 12px;
+    padding: 10px 12px; margin-bottom: 8px;
+  }
+  .streak-row label { font-size: 12px; color: #7a6a5a; font-weight: 700; }
+  .streak-mode {
+    display: flex; gap: 6px;
+  }
+  .streak-mode-btn {
+    padding: 4px 10px; border-radius: 8px; border: none;
+    background: rgba(255,255,255,0.8); color: #7a6a5a;
+    font-size: 11px; font-weight: 700; cursor: pointer;
+  }
+  .streak-mode-btn.active {
+    background: linear-gradient(135deg, #f5a5a5, #f5c178); color: #fff;
+  }
+</style>
+</head>
+<body>
+<div class="bg-rabbit">🐰</div>
+
+<div class="app">
+  <!-- 状态栏占位 -->
+  <div class="status-bar">
+    <span id="statusTime">22:44</span>
+    <span>📶 🔋</span>
+  </div>
+
+  <!-- 顶部 Header -->
+  <div class="header">
+    <div class="header-left">
+      <span class="menu-btn">☰</span>
+      <span class="title">我的工作台 <span class="sparkle">✨</span></span>
+    </div>
+    <span class="date-pill" id="datePill">07/29 周三</span>
+  </div>
+
+  <!-- 问候区 -->
+  <div class="greeting-section">
+    <div class="greeting-text">
+      <div class="greeting-main" id="greeting">晚上好呀 🌙</div>
+      <div class="greeting-sub">愿你稳步向理想的自己靠近 ✨</div>
+    </div>
+    <div class="weather-box">
+      <span class="weather-emoji">🌙</span>
+      <span class="weather-temp">28°</span>
+    </div>
+  </div>
+
+  <!-- 今日一句 -->
+  <div class="quote-card">
+    <span class="quote-tag">⭐ 今日一句</span>
+    <div class="quote-text">你未来的样子，<br>藏在你现在的选择里。</div>
+    <span class="quote-deco">🌷</span>
+  </div>
+
+  <!-- 今日概览（环形进度） -->
+  <div class="section-card">
+    <div class="section-title">✨ 今日概览</div>
+    <div class="overview-grid">
+      <div class="overview-item" onclick="openDetail('sport')">
+        <div class="ring">
+          <svg viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="26"/>
+            <circle class="ring-fg" cx="32" cy="32" r="26"
+              stroke="#8bc97a"
+              stroke-dasharray="163.36" stroke-dashoffset="40.84"/>
+          </svg>
+          <div class="ring-center">🏃</div>
+        </div>
+        <div class="ring-value">75%</div>
+        <div class="ring-label">运动</div>
+      </div>
+      <div class="overview-item" onclick="openDetail('sleep')">
+        <div class="ring">
+          <svg viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="26"/>
+            <circle class="ring-fg" cx="32" cy="32" r="26"
+              stroke="#a890d4"
+              stroke-dasharray="163.36" stroke-dashoffset="29.4"/>
+          </svg>
+          <div class="ring-center">😴</div>
+        </div>
+        <div class="ring-value">82%</div>
+        <div class="ring-label">睡眠</div>
+      </div>
+      <div class="overview-item" onclick="openDetail('read')">
+        <div class="ring">
+          <svg viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="26"/>
+            <circle class="ring-fg" cx="32" cy="32" r="26"
+              stroke="#f5a5a5"
+              stroke-dasharray="163.36" stroke-dashoffset="65.34"/>
+          </svg>
+          <div class="ring-center">📚</div>
+        </div>
+        <div class="ring-value">60%</div>
+        <div class="ring-label">启蒙</div>
+      </div>
+      <div class="overview-item" onclick="openDetail('plan')">
+        <div class="ring">
+          <svg viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="26"/>
+            <circle class="ring-fg" cx="32" cy="32" r="26"
+              stroke="#f5c178"
+              stroke-dasharray="163.36" stroke-dashoffset="35.94"/>
+          </svg>
+          <div class="ring-center">✅</div>
+        </div>
+        <div class="ring-value">78%</div>
+        <div class="ring-label">习惯</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 今日主任务（重点：每日计划） -->
+  <div class="main-task-card" onclick="openDetail('plan')">
+    <span class="main-task-tag">🎯 今日主任务</span>
+    <div class="main-task-title">完成今日计划 <span>📝</span></div>
+    <div class="main-task-desc" id="mainTaskDesc">稳步完成今天的待办事项</div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="mainProgress" style="width: 60%;"></div>
+    </div>
+    <div class="progress-text" id="mainProgressText">18/30 项完成</div>
+    <span class="main-task-deco">🐰</span>
+  </div>
+
+  <!-- 支持任务 -->
+  <div class="subtask-header">
+    <span class="subtask-title">❤️ 今日支持任务</span>
+    <span class="view-all" onclick="openDetail('all')">查看全部 ›</span>
+  </div>
+  <div class="subtask-grid">
+    <div class="subtask-card" onclick="openDetail('sport')">
+      <div class="subtask-emoji">🏋️</div>
+      <div class="subtask-label">健身训练</div>
+      <div class="subtask-sub">20 分钟力量</div>
+    </div>
+    <div class="subtask-card" onclick="openDetail('read')">
+      <div class="subtask-emoji">📖</div>
+      <div class="subtask-label">亲子启蒙</div>
+      <div class="subtask-sub">绘本 + 互动</div>
+    </div>
+    <div class="subtask-card" onclick="openDetail('hole')">
+      <div class="subtask-emoji">🎬</div>
+      <div class="subtask-label">好剧推荐</div>
+      <div class="subtask-sub">放松一下</div>
+    </div>
+  </div>
+
+  <!-- 底部：趋势 + 快速记录 -->
+  <div class="bottom-grid">
+    <div class="trend-card">
+      <div class="trend-header">
+        🌙 本周睡眠趋势
+        <span class="trend-avg">平均 <strong id="avgSleep">7.2</strong> 小时</span>
+      </div>
+      <canvas id="trendChart"></canvas>
+      <div class="trend-labels">
+        <span>一</span><span>二</span><span>三</span><span>四</span>
+        <span>五</span><span>六</span><span>日</span>
+      </div>
+    </div>
+    <div class="quick-card">
+      <div class="quick-header">⚡ 快速记录</div>
+      <div class="quick-grid">
+        <button class="quick-btn" onclick="quickAdd('sport')">
+          <span class="quick-btn-emoji">🏃</span>
+          <span class="quick-btn-label">记运动</span>
+        </button>
+        <button class="quick-btn" onclick="quickAdd('sleep')">
+          <span class="quick-btn-emoji">😴</span>
+          <span class="quick-btn-label">记睡眠</span>
+        </button>
+        <button class="quick-btn" onclick="quickAdd('plan')">
+          <span class="quick-btn-emoji">📝</span>
+          <span class="quick-btn-label">记计划</span>
+        </button>
+        <button class="quick-btn" onclick="quickAdd('hole')">
+          <span class="quick-btn-emoji">💡</span>
+          <span class="quick-btn-label">记想法</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 模块快捷入口 -->
+  <div class="shortcuts-card">
+    <div class="shortcuts-title">🗂️ 我的模块</div>
+    <div class="shortcuts-grid">
+      <div class="shortcut" onclick="openDetail('sleep')">
+        <div class="shortcut-icon" style="background: linear-gradient(135deg, #a890d4, #d4b8e8);">😴</div>
+        <div class="shortcut-label">睡眠</div>
+      </div>
+      <div class="shortcut" onclick="openDetail('sport')">
+        <div class="shortcut-icon" style="background: linear-gradient(135deg, #8bc97a, #b8e6a8);">🏃</div>
+        <div class="shortcut-label">运动</div>
+      </div>
+      <div class="shortcut" onclick="openDetail('read')">
+        <div class="shortcut-icon" style="background: linear-gradient(135deg, #f5a5a5, #f8c4c4);">📚</div>
+        <div class="shortcut-label">启蒙</div>
+      </div>
+      <div class="shortcut" onclick="openDetail('plan')">
+        <div class="shortcut-icon" style="background: linear-gradient(135deg, #f5c178, #f5e0a8);">📝</div>
+        <div class="shortcut-label">计划</div>
+      </div>
+      <div class="shortcut" onclick="openDetail('hole')">
+        <div class="shortcut-icon" style="background: linear-gradient(135deg, #7ab8d4, #a8d4e8);">🌳</div>
+        <div class="shortcut-label">树洞</div>
+      </div>
+      <div class="shortcut" onclick="openDetail('news')">
+        <div class="shortcut-icon" style="background: linear-gradient(135deg, #7ab8d4, #a8d4e8);">📰</div>
+        <div class="shortcut-label">要闻</div>
+      </div>
+      <div class="shortcut" onclick="openDetail('book')">
+        <div class="shortcut-icon" style="background: linear-gradient(135deg, #e88aa8, #f5a5a5);">📖</div>
+        <div class="shortcut-label">好书</div>
+      </div>
+      <div class="shortcut" onclick="openDetail('drama')">
+        <div class="shortcut-icon" style="background: linear-gradient(135deg, #e88aa8, #f5c178);">🎬</div>
+        <div class="shortcut-label">好剧</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 底部 Tabbar -->
+<div class="tabbar">
+  <div class="tab active" onclick="goHome()">
+    <span class="tab-icon">🏠</span>
+    <span>首页</span>
+  </div>
+  <div class="tab" onclick="openDetail('all')">
+    <span class="tab-icon">🧩</span>
+    <span>模块</span>
+  </div>
+  <div class="tab-plus" onclick="quickAdd('plan')">+</div>
+  <div class="tab" onclick="openDetail('news')">
+    <span class="tab-icon">📊</span>
+    <span>洞察</span>
+  </div>
+  <div class="tab" onclick="openDetail('me')">
+    <span class="tab-icon">👤</span>
+    <span>我的</span>
+  </div>
+</div>
+
+<!-- 详情页容器 -->
+<div class="detail" id="detail">
+  <div class="detail-header">
+    <div class="back-btn" onclick="closeDetail()">‹</div>
+    <div class="detail-title" id="detailTitle">详情</div>
+  </div>
+  <div class="detail-body" id="detailBody"></div>
+</div>
+
+<!-- 弹窗 Modal -->
+<div class="modal-mask" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle">添加</div>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+// ============ 数据存储 ============
+const STORE = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e) { return d; } },
+  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+};
+
+const today = () => new Date().toISOString().split('T')[0];
+const dateKey = (d) => d.toISOString().split('T')[0];
+
+// ============ 问候 + 日期 ============
+function updateGreeting() {
+  const h = new Date().getHours();
+  const g = h < 6 ? '凌晨好呀 🌌' : h < 12 ? '早上好呀 ☀️' : h < 14 ? '中午好呀 🌞' : h < 18 ? '下午好呀 🌤️' : h < 22 ? '晚上好呀 🌙' : '夜深了 🌜';
+  document.getElementById('greeting').textContent = g;
+  const d = new Date();
+  const days = ['周日','周一','周二','周三','周四','周五','周六'];
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  document.getElementById('datePill').textContent = `${m}/${dd} ${days[d.getDay()]}`;
+  document.getElementById('statusTime').textContent = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+// ============ 睡眠趋势图 ============
+function drawTrend() {
+  const cvs = document.getElementById('trendChart');
+  const ctx = cvs.getContext('2d');
+  const w = cvs.width = cvs.offsetWidth * 2;
+  const h = cvs.height = 180;
+  ctx.clearRect(0,0,w,h);
+
+  const sleepRecords = STORE.get('sleepRecords', []);
+  const last7 = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const k = dateKey(d);
+    const rec = sleepRecords.find(r => r.date === k);
+    last7.push(rec ? rec.hours : 0);
+  }
+
+  const max = 10, min = 0;
+  const stepX = w / 6;
+  const points = last7.map((v, i) => ({
+    x: i * stepX, y: h - 20 - ((v - min) / (max - min)) * (h - 40)
+  }));
+
+  // 渐变填充
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, 'rgba(168,144,212,0.3)');
+  grad.addColorStop(1, 'rgba(168,144,212,0)');
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+  points.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(w, h);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // 折线
+  ctx.beginPath();
+  ctx.strokeStyle = '#a890d4';
+  ctx.lineWidth = 3;
+  ctx.lineJoin = 'round';
+  points.forEach((p, i) => {
+    if (i === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  });
+  ctx.stroke();
+
+  // 圆点
+  points.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 5, 0, Math.PI*2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.strokeStyle = '#a890d4';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  });
+
+  const valid = last7.filter(v => v > 0);
+  const avg = valid.length ? (valid.reduce((a,b)=>a+b,0) / valid.length).toFixed(1) : '0';
+  document.getElementById('avgSleep').textContent = avg;
+}
+
+// ============ 进度统计 ============
+function updateOverview() {
+  const todos = STORE.get('todos_'+today(), []);
+  const doneCount = todos.filter(t => t.done).length;
+  const totalCount = todos.length;
+  const pct = totalCount ? Math.round(doneCount/totalCount*100) : 0;
+  document.querySelectorAll('.ring-value')[3].textContent = pct + '%';
+  // 主任务进度
+  document.getElementById('mainProgress').style.width = pct + '%';
+  document.getElementById('mainProgressText').textContent = `${doneCount}/${totalCount} 项完成`;
+  document.getElementById('mainTaskDesc').textContent = totalCount ? `今日共 ${totalCount} 项待办` : '今天还没有计划，去添加吧';
+}
+
+// ============ 详情页 ============
+const detailBodies = {};
+
+function openDetail(type) {
+  const titles = {
+    sleep: '睡眠记录', sport: '运动健身', read: '亲子启蒙',
+    plan: '每日计划', hole: '树洞', news: '今日要闻',
+    book: '好书推荐', drama: '好剧推荐', me: '我的', all: '所有模块'
+  };
+  document.getElementById('detailTitle').textContent = titles[type] || type;
+  renderDetail(type);
+  document.getElementById('detail').classList.add('show');
+}
+
+function closeDetail() {
+  document.getElementById('detail').classList.remove('show');
+}
+
+function renderDetail(type) {
+  const body = document.getElementById('detailBody');
+  body.innerHTML = '';
+  switch(type) {
+    case 'sleep': renderSleep(body); break;
+    case 'sport': renderSport(body); break;
+    case 'read': renderRead(body); break;
+    case 'plan': renderPlan(body); break;
+    case 'hole': renderHole(body); break;
+    case 'news': renderNews(body); break;
+    case 'book': renderBook(body); break;
+    case 'drama': renderDrama(body); break;
+    case 'me': renderMe(body); break;
+    case 'all': renderAll(body); break;
+  }
+}
+
+// ============ 各模块渲染 ============
+
+function renderSleep(body) {
+  const records = STORE.get('sleepRecords', []);
+  const todayKey = today();
+  const todayRec = records.find(r => r.date === todayKey);
+  body.innerHTML = `
+    <div class="section-card">
+      <div class="section-title">🌙 今日睡眠</div>
+      <div style="text-align:center;padding:20px 0;">
+        <div style="font-size:36px;font-weight:900;color:#a890d4;">${todayRec ? todayRec.hours.toFixed(1) + ' 小时' : '未记录'}</div>
+        <div style="font-size:12px;color:#a89880;margin-top:4px;">${todayRec ? todayRec.start + ' → ' + todayRec.end : '添加今天的睡眠记录'}</div>
+      </div>
+      <button class="add-btn" onclick="addSleep()">+ 记录今日睡眠</button>
+    </div>
+    <div class="section-title">📊 历史记录</div>
+    <div class="list">${records.slice(-7).reverse().map(r => `
+      <div class="list-item">
+        <div class="list-item-text">
+          <div class="list-item-title">${r.date}</div>
+          <div class="list-item-sub">${r.start} → ${r.end} · ${r.hours.toFixed(1)} 小时</div>
+        </div>
+        <span class="list-item-del" onclick="delSleep('${r.date}')">删除</span>
+      </div>`).join('') || '<div class="empty"><div class="empty-emoji">🌙</div>暂无记录</div>'}
+    </div>`;
+}
+
+function renderSport(body) {
+  const items = STORE.get('sportItems', []);
+  const dates = STORE.get('sportDates', []);
+  const miData = STORE.get('miSportData', null);
+  let streakMode = STORE.get('streakMode', 'auto');
+  let streakDays = STORE.get('streakDays', 0);
+
+  body.innerHTML = `
+    <div class="section-card">
+      <div class="section-title">🔥 连续打卡</div>
+      <div class="streak-row">
+        <label>打卡模式</label>
+        <div class="streak-mode">
+          <button class="streak-mode-btn ${streakMode==='auto'?'active':''}" onclick="setStreakMode('auto')">自动</button>
+          <button class="streak-mode-btn ${streakMode==='manual'?'active':''}" onclick="setStreakMode('manual')">手动</button>
+        </div>
+      </div>
+      <div style="text-align:center;padding:14px 0;">
+        <div style="font-size:42px;font-weight:900;color:#8bc97a;">${streakMode==='auto'?calcStreak():streakDays} 天</div>
+        <div style="font-size:12px;color:#a89880;margin-top:4px;">${streakMode==='auto'?'根据打卡日期自动计算':'手动设置天数'}</div>
+        ${streakMode==='manual'?`<button class="add-btn" onclick="editStreak()" style="margin-top:10px;">编辑天数</button>`:''}
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">📱 步数</div>
+      <div style="text-align:center;padding:14px 0;">
+        <div style="font-size:32px;font-weight:900;color:#7ab8d4;" id="stepCount">0</div>
+        <div style="font-size:11px;color:#a89880;">点击下方按钮启动计步器</div>
+        <button class="add-btn" onclick="startStep()" style="margin-top:10px;">📱 启动手机计步</button>
+      </div>
+    </div>
+    ${miData ? `
+    <div class="section-card">
+      <div class="section-title">⌚ 小米运动健康</div>
+      <div style="font-size:13px;color:#7a6a5a;line-height:1.8;">
+        📅 ${miData.date}<br>
+        👣 步数: ${miData.steps}<br>
+        🔥 消耗: ${miData.calories} 千卡<br>
+        📏 距离: ${miData.distance} 公里
+      </div>
+      <button class="add-btn" onclick="addMiData()">更新数据</button>
+    </div>` : `
+    <div class="section-card">
+      <div class="section-title">⌚ 小米运动健康</div>
+      <div style="text-align:center;color:#a89880;font-size:12px;padding:14px 0;">未同步数据</div>
+      <button class="add-btn" onclick="addMiData()">手动同步数据</button>
+    </div>`}
+    <div class="section-title">💪 今日运动</div>
+    <div class="list">${items.map((it, i) => `
+      <div class="list-item">
+        <div class="check-box ${it.done?'checked':''}" onclick="toggleSport(${i})"></div>
+        <div class="list-item-text">
+          <div class="list-item-title ${it.done?'done':''}">${it.name}</div>
+          <div class="list-item-sub">${it.duration} 分钟${it.calories?' · '+it.calories+' 千卡':''}</div>
+        </div>
+        <span class="list-item-del" onclick="delSport(${i})">删除</span>
+      </div>`).join('') || '<div class="empty"><div class="empty-emoji">🏃</div>还没有运动项目</div>'}
+      <button class="add-btn" onclick="addSport()">+ 添加运动</button>
+    </div>`;
+}
+
+function renderRead(body) {
+  const content = STORE.get('readContent', []);
+  const categories = ['绘本阅读','英语启蒙','数字游戏','手工创意','音乐启蒙','自然探索','亲子对话'];
+  body.innerHTML = `
+    <div class="section-card">
+      <div class="section-title">📚 分类</div>
+      <div class="shortcuts-grid">
+        ${categories.map((c,i) => `
+          <div class="shortcut" onclick="filterRead('${c}')">
+            <div class="shortcut-icon" style="background: linear-gradient(135deg, ${['#f5a5a5,#f8c4c4','#7ab8d4,#a8d4e8','#f5c178,#f5e0a8','#8bc97a,#b8e6a8','#a890d4,#d4b8e8','#e88aa8,#f5a5a5','#f5c178,#f8c4c4'][i]});">${['📖','🔤','🔢','🎨','🎵','🌿','💬'][i]}</div>
+            <div class="shortcut-label">${c}</div>
+          </div>`).join('')}
+        <div class="shortcut" onclick="addReadCustom()">
+          <div class="shortcut-icon" style="background: rgba(200,180,140,0.3);">+</div>
+          <div class="shortcut-label">自定义</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-title">📋 内容列表</div>
+    <div class="list">${content.map((c, i) => `
+      <div class="list-item">
+        <div class="list-item-text">
+          <div class="list-item-title">${c.title}</div>
+          <div class="list-item-sub">${c.category} · ${c.date||''}</div>
+        </div>
+        <span class="list-item-del" onclick="delRead(${i})">删除</span>
+      </div>`).join('') || '<div class="empty"><div class="empty-emoji">📚</div>还没有启蒙内容</div>'}
+      <button class="add-btn" onclick="addRead()">+ 添加启蒙内容</button>
+    </div>`;
+}
+
+function renderPlan(body) {
+  const todos = STORE.get('todos_'+today(), []);
+  body.innerHTML = `
+    <div class="section-card">
+      <div class="section-title">📝 今日计划</div>
+      <div style="text-align:center;padding:14px 0;">
+        <div style="font-size:32px;font-weight:900;color:#f5c178;">${todos.filter(t=>t.done).length}/${todos.length}</div>
+        <div style="font-size:12px;color:#a89880;margin-top:4px;">已完成 / 总数</div>
+        <div class="progress-bar-wrap" style="margin-top:12px;">
+          <div class="progress-bar" style="width:${todos.length?todos.filter(t=>t.done).length/todos.length*100:0}%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="list">${todos.map((t, i) => `
+      <div class="list-item">
+        <div class="check-box ${t.done?'checked':''}" onclick="toggleTodo(${i})"></div>
+        <div class="list-item-text">
+          <div class="list-item-title ${t.done?'done':''}">${t.title}</div>
+          <div class="list-item-sub">${t.time||'今天'}${t.note?' · '+t.note:''}</div>
+        </div>
+        <span class="list-item-del" onclick="delTodo(${i})">删除</span>
+      </div>`).join('') || '<div class="empty"><div class="empty-emoji">📝</div>今天还没有计划</div>'}
+      <button class="add-btn" onclick="addTodo()">+ 添加计划</button>
+    </div>`;
+}
+
+function renderHole(body) {
+  const posts = STORE.get('myPosts', []);
+  body.innerHTML = `
+    <div class="list">${posts.map(p => `
+      <div class="list-item" style="flex-direction:column;align-items:stretch;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <strong style="color:#7ab8d4;">${p.author||'我'}</strong>
+          <span style="font-size:10px;color:#a89880;">${p.time||''}</span>
+        </div>
+        <div style="margin-top:6px;font-size:13px;color:#5a4a3a;line-height:1.5;">${p.text}</div>
+        <div style="margin-top:8px;display:flex;gap:14px;font-size:11px;color:#a89880;">
+          <span>❤️ ${p.likes||0}</span>
+          <span>💬 ${p.comments||0}</span>
+        </div>
+      </div>`).join('') || '<div class="empty"><div class="empty-emoji">🌳</div>还没有树洞消息</div>'}
+      <button class="add-btn" onclick="addPost()">+ 发布心情</button>
+    </div>`;
+}
+
+function renderNews(body) {
+  const news = [
+    {title:'AI 编程助手迎来新一轮升级', src:'https://www.thepaper.cn'},
+    {title:'夏日健康饮食：八种最适合的时令水果', src:'https://www.xinhuanet.com'},
+    {title:'亲子阅读：让孩子爱上阅读的五个小技巧', src:'https://www.sohu.com'}
+  ];
+  body.innerHTML = `<div class="list">${news.map(n => `
+    <div class="list-item" onclick="window.open('${n.src}','_blank')">
+      <div style="font-size:22px;">📰</div>
+      <div class="list-item-text">
+        <div class="list-item-title">${n.title}</div>
+        <div class="list-item-sub">点击查看详情 ›</div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+function renderBook(body) {
+  const books = [
+    {title:'《小王子》', author:'圣埃克苏佩里', src:'https://book.douban.com/subject/1084336/'},
+    {title:'《窗边的小豆豆》', author:'黑柳彻子', src:'https://book.douban.com/subject/1008354/'},
+    {title:'《夏山学校》', author:'A.S.尼尔', src:'https://book.douban.com/subject/2038157/'}
+  ];
+  body.innerHTML = `<div class="list">${books.map(b => `
+    <div class="list-item" onclick="window.open('${b.src}','_blank')">
+      <div style="font-size:22px;">📖</div>
+      <div class="list-item-text">
+        <div class="list-item-title">${b.title}</div>
+        <div class="list-item-sub">${b.author} · 点击查看 ›</div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+function renderDrama(body) {
+  const dramas = [
+    {title:'《去有风的地方》', src:'https://www.iqiyi.com'},
+    {title:'《我的阿勒泰》', src:'https://www.youku.com'},
+    {title:'《山海情》', src:'https://v.qq.com'}
+  ];
+  body.innerHTML = `<div class="list">${dramas.map(d => `
+    <div class="list-item" onclick="window.open('${d.src}','_blank')">
+      <div style="font-size:22px;">🎬</div>
+      <div class="list-item-text">
+        <div class="list-item-title">${d.title}</div>
+        <div class="list-item-sub">点击观看 ›</div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+function renderMe(body) {
+  const sleepN = STORE.get('sleepRecords',[]).length;
+  const sportN = STORE.get('sportItems',[]).length;
+  const todoN = Object.keys(localStorage).filter(k => k.startsWith('todos_')).length;
+  const postN = STORE.get('myPosts',[]).length;
+  body.innerHTML = `
+    <div class="section-card" style="text-align:center;padding:24px 18px;">
+      <div style="font-size:48px;">🐰</div>
+      <div style="font-size:18px;font-weight:800;color:#5a4a3a;margin-top:8px;">我的工作台</div>
+      <div style="font-size:12px;color:#a89880;margin-top:4px;">每一天，都向理想靠近一点 ✨</div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">📊 我的数据</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
+        <div style="background:rgba(168,144,212,0.15);border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:24px;font-weight:900;color:#a890d4;">${sleepN}</div>
+          <div style="font-size:11px;color:#7a6a5a;margin-top:4px;">睡眠记录</div>
+        </div>
+        <div style="background:rgba(139,201,122,0.15);border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:24px;font-weight:900;color:#8bc97a;">${sportN}</div>
+          <div style="font-size:11px;color:#7a6a5a;margin-top:4px;">运动项目</div>
+        </div>
+        <div style="background:rgba(245,193,120,0.15);border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:24px;font-weight:900;color:#f5c178;">${todoN}</div>
+          <div style="font-size:11px;color:#7a6a5a;margin-top:4px;">规划天数</div>
+        </div>
+        <div style="background:rgba(122,184,212,0.15);border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:24px;font-weight:900;color:#7ab8d4;">${postN}</div>
+          <div style="font-size:11px;color:#7a6a5a;margin-top:4px;">树洞消息</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">⚙️ 设置</div>
+      <div class="list">
+        <div class="list-item" onclick="if(confirm('确定清空所有数据吗？')){localStorage.clear();location.reload();}">
+          <div style="font-size:20px;">🗑️</div>
+          <div class="list-item-text">
+            <div class="list-item-title">清空所有数据</div>
+            <div class="list-item-sub">不可恢复，请谨慎</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderAll(body) {
+  body.innerHTML = `
+    <div class="section-card">
+      <div class="section-title">🗂️ 所有模块</div>
+      <div class="shortcuts-grid">
+        <div class="shortcut" onclick="openDetail('sleep')">
+          <div class="shortcut-icon" style="background: linear-gradient(135deg, #a890d4, #d4b8e8);">😴</div>
+          <div class="shortcut-label">睡眠</div>
+        </div>
+        <div class="shortcut" onclick="openDetail('sport')">
+          <div class="shortcut-icon" style="background: linear-gradient(135deg, #8bc97a, #b8e6a8);">🏃</div>
+          <div class="shortcut-label">运动</div>
+        </div>
+        <div class="shortcut" onclick="openDetail('read')">
+          <div class="shortcut-icon" style="background: linear-gradient(135deg, #f5a5a5, #f8c4c4);">📚</div>
+          <div class="shortcut-label">启蒙</div>
+        </div>
+        <div class="shortcut" onclick="openDetail('plan')">
+          <div class="shortcut-icon" style="background: linear-gradient(135deg, #f5c178, #f5e0a8);">📝</div>
+          <div class="shortcut-label">计划</div>
+        </div>
+        <div class="shortcut" onclick="openDetail('hole')">
+          <div class="shortcut-icon" style="background: linear-gradient(135deg, #7ab8d4, #a8d4e8);">🌳</div>
+          <div class="shortcut-label">树洞</div>
+        </div>
+        <div class="shortcut" onclick="openDetail('news')">
+          <div class="shortcut-icon" style="background: linear-gradient(135deg, #7ab8d4, #a8d4e8);">📰</div>
+          <div class="shortcut-label">要闻</div>
+        </div>
+        <div class="shortcut" onclick="openDetail('book')">
+          <div class="shortcut-icon" style="background: linear-gradient(135deg, #e88aa8, #f5a5a5);">📖</div>
+          <div class="shortcut-label">好书</div>
+        </div>
+        <div class="shortcut" onclick="openDetail('drama')">
+          <div class="shortcut-icon" style="background: linear-gradient(135deg, #e88aa8, #f5c178);">🎬</div>
+          <div class="shortcut-label">好剧</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ============ 操作函数 ============
+
+function addSleep() {
+  document.getElementById('modalTitle').textContent = '记录睡眠';
+  document.getElementById('modalContent').innerHTML = `
+    <div class="form-group">
+      <label class="form-label">入睡时间</label>
+      <input type="time" class="form-input" id="sleepStart" value="23:00">
+    </div>
+    <div class="form-group">
+      <label class="form-label">起床时间</label>
+      <input type="time" class="form-input" id="sleepEnd" value="07:00">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveSleep()">保存</button>
+    </div>`;
+  openModal();
+}
+
+function saveSleep() {
+  const start = document.getElementById('sleepStart').value;
+  const end = document.getElementById('sleepEnd').value;
+  if (!start || !end) { alert('请填写完整'); return; }
+  let hours = (parseInt(end.split(':')[0]) + (parseInt(end.split(':')[1])/60)) - (parseInt(start.split(':')[0]) + parseInt(start.split(':')[1])/60);
+  if (hours < 0) hours += 24;
+  let records = STORE.get('sleepRecords', []);
+  records = records.filter(r => r.date !== today());
+  records.push({ date: today(), start, end, hours });
+  STORE.set('sleepRecords', records);
+  closeModal(); openDetail('sleep'); drawTrend();
+}
+
+function delSleep(d) {
+  if (!confirm('删除该记录？')) return;
+  STORE.set('sleepRecords', STORE.get('sleepRecords', []).filter(r => r.date !== d));
+  openDetail('sleep'); drawTrend();
+}
+
+function addSport() {
+  document.getElementById('modalTitle').textContent = '添加运动';
+  document.getElementById('modalContent').innerHTML = `
+    <div class="form-group">
+      <label class="form-label">运动名称</label>
+      <input type="text" class="form-input" id="sportName" placeholder="如：跑步">
+    </div>
+    <div class="form-group">
+      <label class="form-label">时长（分钟）</label>
+      <input type="number" class="form-input" id="sportDur" placeholder="30">
+    </div>
+    <div class="form-group">
+      <label class="form-label">消耗（千卡，可选）</label>
+      <input type="number" class="form-input" id="sportCal" placeholder="200">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveSport()">保存</button>
+    </div>`;
+  openModal();
+}
+
+function saveSport() {
+  const name = document.getElementById('sportName').value.trim();
+  const dur = parseInt(document.getElementById('sportDur').value) || 0;
+  const cal = parseInt(document.getElementById('sportCal').value) || 0;
+  if (!name) { alert('请填写运动名称'); return; }
+  let items = STORE.get('sportItems', []);
+  items.push({ name, duration: dur, calories: cal, done: false });
+  STORE.set('sportItems', items);
+  let dates = STORE.get('sportDates', []);
+  if (!dates.includes(today())) { dates.push(today()); STORE.set('sportDates', dates); }
+  closeModal(); openDetail('sport');
+}
+
+function delSport(i) {
+  let items = STORE.get('sportItems', []);
+  items.splice(i, 1); STORE.set('sportItems', items);
+  openDetail('sport');
+}
+
+function toggleSport(i) {
+  let items = STORE.get('sportItems', []);
+  items[i].done = !items[i].done; STORE.set('sportItems', items);
+  openDetail('sport');
+}
+
+function setStreakMode(m) { STORE.set('streakMode', m); openDetail('sport'); }
+
+function editStreak() {
+  const v = prompt('设置连续打卡天数：', STORE.get('streakDays', 0));
+  if (v !== null) { STORE.set('streakDays', parseInt(v)||0); openDetail('sport'); }
+}
+
+function calcStreak() {
+  const dates = STORE.get('sportDates', []).sort();
+  if (!dates.length) return 0;
+  let streak = 1; const todayK = today();
+  if (dates[dates.length-1] !== todayK) {
+    const yest = new Date(); yest.setDate(yest.getDate()-1);
+    if (dates[dates.length-1] !== dateKey(yest)) return 0;
+  }
+  for (let i = dates.length-1; i > 0; i--) {
+    const d1 = new Date(dates[i]); const d2 = new Date(dates[i-1]);
+    const diff = (d1-d2)/(1000*60*60*24);
+    if (diff === 1) streak++;
+    else break;
+  }
+  return streak;
+}
+
+let stepBase = null;
+function startStep() {
+  if (typeof DeviceMotionEvent === 'undefined') { alert('该设备不支持运动传感器'); return; }
+  if (typeof DeviceMotionEvent.requestPermission === 'function') {
+    DeviceMotionEvent.requestPermission().then(state => {
+      if (state === 'granted') initStep();
+    });
+  } else initStep();
+}
+function initStep() {
+  let lastA = 0; let count = STORE.get('stepCount', 0);
+  document.getElementById('stepCount').textContent = count;
+  window.addEventListener('devicemotion', e => {
+    const a = e.accelerationIncludingGravity;
+    if (!a || !a.x) return;
+    const mag = Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
+    if (mag > 15 && Math.abs(mag - lastA) > 5) {
+      count++; STORE.set('stepCount', count);
+      document.getElementById('stepCount').textContent = count;
+    }
+    lastA = mag;
+  });
+  alert('计步器已启动 ✅');
+}
+
+function addMiData() {
+  document.getElementById('modalTitle').textContent = '同步小米运动健康';
+  document.getElementById('modalContent').innerHTML = `
+    <div style="font-size:11px;color:#a89880;margin-bottom:12px;line-height:1.5;">
+      💡 小米运动健康暂无公开 API，请在 App 中查看数据后手动输入。
+    </div>
+    <div class="form-group">
+      <label class="form-label">日期</label>
+      <input type="date" class="form-input" id="miDate" value="${today()}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">步数</label>
+      <input type="number" class="form-input" id="miSteps" placeholder="8000">
+    </div>
+    <div class="form-group">
+      <label class="form-label">消耗（千卡）</label>
+      <input type="number" class="form-input" id="miCal" placeholder="320">
+    </div>
+    <div class="form-group">
+      <label class="form-label">距离（公里）</label>
+      <input type="number" class="form-input" id="miDist" placeholder="5.2" step="0.1">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveMiData()">保存</button>
+    </div>`;
+  openModal();
+}
+
+function saveMiData() {
+  const data = {
+    date: document.getElementById('miDate').value,
+    steps: parseInt(document.getElementById('miSteps').value)||0,
+    calories: parseInt(document.getElementById('miCal').value)||0,
+    distance: parseFloat(document.getElementById('miDist').value)||0
+  };
+  STORE.set('miSportData', data);
+  closeModal(); openDetail('sport');
+}
+
+function addTodo() {
+  document.getElementById('modalTitle').textContent = '添加计划';
+  document.getElementById('modalContent').innerHTML = `
+    <div class="form-group">
+      <label class="form-label">计划内容</label>
+      <input type="text" class="form-input" id="todoTitle" placeholder="如：完成项目文档">
+    </div>
+    <div class="form-group">
+      <label class="form-label">时间（可选）</label>
+      <input type="text" class="form-input" id="todoTime" placeholder="上午 9:00">
+    </div>
+    <div class="form-group">
+      <label class="form-label">备注（可选）</label>
+      <input type="text" class="form-input" id="todoNote" placeholder="补充说明">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveTodo()">保存</button>
+    </div>`;
+  openModal();
+}
+
+function saveTodo() {
+  const title = document.getElementById('todoTitle').value.trim();
+  const time = document.getElementById('todoTime').value.trim();
+  const note = document.getElementById('todoNote').value.trim();
+  if (!title) { alert('请填写计划内容'); return; }
+  let todos = STORE.get('todos_'+today(), []);
+  todos.push({ title, time, note, done: false });
+  STORE.set('todos_'+today(), todos);
+  closeModal(); openDetail('plan'); updateOverview();
+}
+
+function toggleTodo(i) {
+  let todos = STORE.get('todos_'+today(), []);
+  todos[i].done = !todos[i].done; STORE.set('todos_'+today(), todos);
+  openDetail('plan'); updateOverview();
+}
+
+function delTodo(i) {
+  let todos = STORE.get('todos_'+today(), []);
+  todos.splice(i, 1); STORE.set('todos_'+today(), todos);
+  openDetail('plan'); updateOverview();
+}
+
+function addPost() {
+  document.getElementById('modalTitle').textContent = '发布心情';
+  document.getElementById('modalContent').innerHTML = `
+    <div class="form-group">
+      <label class="form-label">想说的话</label>
+      <textarea class="form-textarea" id="postText" placeholder="今天想发泄点什么..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">署名（可选）</label>
+      <input type="text" class="form-input" id="postAuthor" placeholder="匿名">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="savePost()">发布</button>
+    </div>`;
+  openModal();
+}
+
+function savePost() {
+  const text = document.getElementById('postText').value.trim();
+  const author = document.getElementById('postAuthor').value.trim() || '匿名';
+  if (!text) { alert('写点内容吧'); return; }
+  let posts = STORE.get('myPosts', []);
+  posts.unshift({
+    text, author, time: new Date().toLocaleString('zh-CN', {month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'}),
+    likes: 0, comments: 0
+  });
+  STORE.set('myPosts', posts);
+  closeModal(); openDetail('hole');
+}
+
+function addRead() {
+  const cats = ['绘本阅读','英语启蒙','数字游戏','手工创意','音乐启蒙','自然探索','亲子对话'];
+  document.getElementById('modalTitle').textContent = '添加启蒙内容';
+  document.getElementById('modalContent').innerHTML = `
+    <div class="form-group">
+      <label class="form-label">分类</label>
+      <select class="form-input" id="readCat">${cats.map(c => `<option>${c}</option>`).join('')}</select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">内容名称</label>
+      <input type="text" class="form-input" id="readTitle" placeholder="如：读《好饿的毛毛虫》">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveRead()">保存</button>
+    </div>`;
+  openModal();
+}
+
+function saveRead() {
+  const category = document.getElementById('readCat').value;
+  const title = document.getElementById('readTitle').value.trim();
+  if (!title) { alert('请填写内容名称'); return; }
+  let content = STORE.get('readContent', []);
+  content.push({ category, title, date: today() });
+  STORE.set('readContent', content);
+  closeModal(); openDetail('read');
+}
+
+function addReadCustom() {
+  const cat = prompt('请输入自定义分类名称：');
+  if (!cat) return;
+  const title = prompt('请输入内容名称：');
+  if (!title) return;
+  let content = STORE.get('readContent', []);
+  content.push({ category: cat, title, date: today() });
+  STORE.set('readContent', content);
+  openDetail('read');
+}
+
+function filterRead(cat) {
+  const content = STORE.get('readContent', []).filter(c => c.category === cat);
+  alert(`${cat}：共 ${content.length} 项内容\n\n${content.map((c,i) => `${i+1}. ${c.title}`).join('\n')||'暂无内容'}`);
+}
+
+function delRead(i) {
+  let content = STORE.get('readContent', []);
+  content.splice(i, 1); STORE.set('readContent', content);
+  openDetail('read');
+}
+
+function quickAdd(type) {
+  switch(type) {
+    case 'sport': addSport(); break;
+    case 'sleep': addSleep(); break;
+    case 'plan': addTodo(); break;
+    case 'hole': addPost(); break;
+    case 'read': addRead(); break;
+  }
+}
+
+function openModal() { document.getElementById('modal').classList.add('show'); }
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+function goHome() { closeDetail(); }
+
+// ============ 初始化 ============
+updateGreeting();
+drawTrend();
+updateOverview();
+setInterval(updateGreeting, 60000);
+</script>
+</body>
+</html>
