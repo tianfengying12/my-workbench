@@ -1087,6 +1087,15 @@ function renderSport(body) {
   let streakDays = STORE.get('streakDays', 0);
   const stepCount = STORE.get('stepCount_' + today(), 0);
   const stepActive = STORE.get('stepActive', false);
+  const totalSteps = getTotalSteps();
+
+  // 历史步数（最近7天）
+  const stepHistory = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const k = 'stepCount_' + d.toISOString().split('T')[0];
+    stepHistory.push({ date: d, count: STORE.get(k, 0) });
+  }
 
   body.innerHTML = `
     <div class="section-card">
@@ -1107,16 +1116,49 @@ function renderSport(body) {
     <div class="section-card">
       <div class="section-title">👣 今日步数</div>
       <div style="text-align:center;padding:16px 0;">
-        <div style="font-size:44px;font-weight:900;color:#7ab8d4;" id="stepCount">${stepCount.toLocaleString()}</div>
-        <div style="font-size:11px;color:#a89880;margin-top:4px;" id="stepStatus">${stepActive?'📡 计步中...实时更新':'点击下方按钮开始计步'}</div>
-        <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">
-          <button class="add-btn" style="margin:0;flex:none;padding:8px 20px;font-size:12px;" onclick="startStep()">${stepActive?'🔄 重新启动':'▶️ 开始计步'}</button>
-          ${stepCount > 0 ? '<button class="add-btn" style="margin:0;flex:none;padding:8px 16px;font-size:12px;background:rgba(200,180,140,0.3);color:#7a6a5a;" onclick="resetStep()">归零</button>' : ''}
+        <div style="font-size:48px;font-weight:900;color:#7ab8d4;" id="stepCount">${stepCount.toLocaleString()}</div>
+        <div style="font-size:11px;color:#a89880;margin-top:4px;" id="stepStatus">${stepActive?'📡 传感器计步中...':'点击下方按钮开始自动计步'}</div>
+        <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+          <button class="add-btn" style="margin:0;flex:none;padding:8px 18px;font-size:12px;" onclick="startStep()">${stepActive?'🔄 重新启动':'▶️ 开始计步'}</button>
+          <button class="add-btn" style="margin:0;flex:none;padding:8px 18px;font-size:12px;background:linear-gradient(135deg,#f5c178,#f5e0a8);box-shadow:0 4px 10px rgba(245,193,120,0.3);" onclick="manualStep()">✏️ 手动修正</button>
         </div>
       </div>
-      <div style="font-size:10px;color:#a89880;text-align:center;line-height:1.5;margin-top:6px;">
-        💡 计步器使用手机重力传感器自动记录<br>请保持本页面在后台运行
+      <div style="display:flex;justify-content:space-around;margin-top:8px;padding-top:12px;border-top:1px solid rgba(200,180,140,0.15);">
+        <div style="text-align:center;">
+          <div style="font-size:18px;font-weight:900;color:#5a4a3a;">${totalSteps.toLocaleString()}</div>
+          <div style="font-size:10px;color:#a89880;">累计总步数</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:18px;font-weight:900;color:#5a4a3a;">${stepHistory.filter(s=>s.count>0).length || 0}</div>
+          <div style="font-size:10px;color:#a89880;">记录天数</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:18px;font-weight:900;color:#5a4a3a;">${stepHistory.filter(s=>s.count>0).length ? Math.round(stepHistory.filter(s=>s.count>0).reduce((a,b)=>a+b.count,0)/stepHistory.filter(s=>s.count>0).length).toLocaleString() : 0}</div>
+          <div style="font-size:10px;color:#a89880;">日均步数</div>
+        </div>
       </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">📊 近7天步数</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;height:80px;margin-top:8px;">
+        ${stepHistory.map(s => {
+          const maxVal = Math.max(...stepHistory.map(x=>x.count), 1);
+          const h = Math.max(4, (s.count / maxVal) * 70);
+          const isToday = s.date.toISOString().split('T')[0] === today();
+          const dayLabels = ['日','一','二','三','四','五','六'];
+          return `
+            <div style="text-align:center;flex:1;">
+              <div style="font-size:9px;color:#a89880;margin-bottom:2px;">${s.count>0?s.count:''}</div>
+              <div style="height:${h}px;background:${isToday?'linear-gradient(180deg,#7ab8d4,#a8d4e8)':'rgba(122,184,212,0.3)'};border-radius:4px 4px 0 0;width:60%;margin:0 auto;"></div>
+              <div style="font-size:9px;color:${isToday?'#7ab8d4':'#a89880'};font-weight:${isToday?'800':'400'};margin-top:2px;">${dayLabels[s.date.getDay()]}</div>
+            </div>`;
+        }).join('')}
+      </div>
+    </div>
+    <div style="font-size:10px;color:#a89880;text-align:center;line-height:1.5;margin-bottom:12px;padding:0 20px;">
+      💡 网页无法直接读取手机系统的健康步数（系统隐私限制）<br>
+      传感器计步会自动保存，每天的步数永久保留不清零<br>
+      如需修正可点"手动修正"输入准确步数
     </div>
     <div class="section-title">💪 今日运动</div>
     <div class="list">${items.map((it, i) => `
@@ -1135,30 +1177,42 @@ function renderSport(body) {
   if (stepActive) startStepTracker();
 }
 
+function getTotalSteps() {
+  let total = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('stepCount_')) {
+      total += parseInt(localStorage.getItem(key)) || 0;
+    }
+  }
+  return total;
+}
+
 // ============ 步数传感器 ============
 let stepListenerActive = false;
 let stepLastMag = 0;
-let stepThreshold = 12; // 步伐检测阈值
 
 function startStep() {
   if (typeof DeviceMotionEvent === 'undefined') {
-    alert('您的设备不支持运动传感器\n可以手动添加运动记录');
+    alert('您的设备不支持运动传感器\n请使用"手动修正"输入步数');
     return;
   }
   if (typeof DeviceMotionEvent.requestPermission === 'function') {
-    // iOS 需要用户手势触发授权
     DeviceMotionEvent.requestPermission().then(state => {
       if (state === 'granted') {
         STORE.set('stepActive', true);
         startStepTracker();
+        const statusEl = document.getElementById('stepStatus');
+        if (statusEl) statusEl.textContent = '📡 传感器计步中...';
       } else {
         alert('需要授权运动传感器才能自动计步');
       }
     }).catch(() => alert('授权失败，请重试'));
   } else {
-    // Android 直接可用
     STORE.set('stepActive', true);
     startStepTracker();
+    const statusEl = document.getElementById('stepStatus');
+    if (statusEl) statusEl.textContent = '📡 传感器计步中...';
   }
 }
 
@@ -1169,15 +1223,12 @@ function startStepTracker() {
   const stepKey = 'stepCount_' + today();
   let count = STORE.get(stepKey, 0);
   const stepEl = document.getElementById('stepCount');
-  const statusEl = document.getElementById('stepStatus');
-  if (statusEl) statusEl.textContent = '📡 计步中...实时更新';
 
-  window.addEventListener('devicemotion', function stepHandler(e) {
+  window.addEventListener('devicemotion', function(e) {
     const a = e.accelerationIncludingGravity;
     if (!a || a.x === null) return;
     const mag = Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
 
-    // 检测步伐：加速度峰值超过阈值
     if (mag > 15 && stepLastMag < 12) {
       count++;
       STORE.set(stepKey, count);
@@ -1185,6 +1236,16 @@ function startStepTracker() {
     }
     stepLastMag = mag;
   }, { passive: true });
+}
+
+function manualStep() {
+  const current = STORE.get('stepCount_' + today(), 0);
+  const v = prompt(`手动修正今日步数\n（输入今天的实际步数，会覆盖当前值）\n\n当前步数：${current}\n\n💡 可在手机健康App中查看今日步数后填入：`, current);
+  if (v === null) return;
+  const num = parseInt(v) || 0;
+  if (num < 0) { alert('步数不能为负数'); return; }
+  STORE.set('stepCount_' + today(), num);
+  openDetail('sport');
 }
 
 function resetStep() {
